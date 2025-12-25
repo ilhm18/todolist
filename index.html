@@ -893,6 +893,10 @@
         );
 
         let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+        // Inisialisasi flag notifikasi per tugas
+        tasks.forEach((t) => {
+          if (!t.notifiedStages) t.notifiedStages = [];
+        });
         let currentFilter = "all";
         let notificationPermissionAsked = false;
 
@@ -941,6 +945,10 @@
             notification.className = "notification";
             notification.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
             document.body.appendChild(notification);
+            // Hilangkan otomatis setelah 10 detik
+            setTimeout(() => {
+              notification.remove();
+            }, 10000);
           };
 
           const fallbackTimer = setTimeout(showFallback, 400);
@@ -1027,6 +1035,41 @@
           const handler = () => requestNotificationPermission();
           document.addEventListener("click", handler, { once: true });
           document.addEventListener("touchstart", handler, { once: true });
+        }
+
+        // Cek berkala dan kirim notifikasi sistem untuk tugas prioritas banget
+        function setupPriorityHighNotifications() {
+          const thresholds = [48, 24, 12, 6, 1, 0.5, 1 / 6]; // jam: 48h, 24h, 12h, 6h, 1h, 30m, 10m
+
+          const checkAndNotify = () => {
+            const now = new Date();
+            tasks.forEach((task) => {
+              if (task.completed || !task.deadline) return;
+              const deadline = new Date(task.deadline);
+              const hoursLeft = (deadline - now) / (1000 * 60 * 60);
+              if (hoursLeft <= 0) return; // sudah lewat
+
+              // Tandai property jika belum ada
+              if (!Array.isArray(task.notifiedStages)) task.notifiedStages = [];
+
+              thresholds.forEach((th) => {
+                const key = String(th);
+                if (hoursLeft <= th && !task.notifiedStages.includes(key)) {
+                  const human =
+                    th >= 1
+                      ? `${Math.ceil(th)} jam lagi`
+                      : `${Math.round(th * 60)} menit lagi`;
+                  showNotification(`⏰ ${task.text} - tenggat ${human}!`);
+                  task.notifiedStages.push(key);
+                }
+              });
+            });
+            saveTasks();
+          };
+
+          // Jalankan segera, lalu tiap menit
+          checkAndNotify();
+          setInterval(checkAndNotify, 60000);
         }
 
         // Render tasks
@@ -1420,6 +1463,9 @@
 
         // Minta izin notifikasi saat ada interaksi pengguna (butuh gesture di mobile)
         setupNotificationPermissionOnInteraction();
+
+        // Aktifkan cek berkala untuk notifikasi prioritas banget
+        setupPriorityHighNotifications();
 
         // Update priorities periodically (every minute)
         setInterval(() => {
