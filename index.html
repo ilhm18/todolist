@@ -813,12 +813,6 @@
         </div>
 
         <button id="add-btn"><i class="fas fa-plus"></i> Tambah Tugas</button>
-        <button
-          id="test-notify-btn"
-          style="background: #fdcb6e; margin-left: 10px"
-        >
-          <i class="fas fa-bell"></i> Test Notifikasi
-        </button>
       </div>
 
       <div class="controls">
@@ -948,57 +942,86 @@
             console.log("Current permission status:", Notification.permission);
           }
 
-          // Langsung gunakan Notification API - ini adalah yang paling reliable
+          let systemNotifShown = false;
+
+          // Priority 1: Coba via Service Worker (untuk handphone persistent notifications)
+          if ("serviceWorker" in navigator && "Notification" in window) {
+            navigator.serviceWorker.ready
+              .then((registration) => {
+                if (Notification.permission === "granted") {
+                  try {
+                    registration.showNotification("📋 Tugas Reminder", {
+                      body: message,
+                      icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236c5ce7' width='100' height='100'/><text x='50' y='60' font-size='60' fill='white' text-anchor='middle' dominant-baseline='middle'>!</text></svg>",
+                      badge:
+                        "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%23ff7675'/></svg>",
+                      tag: "todolist-notification",
+                      vibrate: [200, 100, 200],
+                    });
+                    systemNotifShown = true;
+                    console.log("✅ System notification via Service Worker!");
+                  } catch (error) {
+                    console.error("Error via SW:", error);
+                  }
+                }
+              })
+              .catch((err) => {
+                console.log("SW not ready, fallback to direct API");
+              });
+          }
+
+          // Priority 2: Direct Notification API
           if (
             "Notification" in window &&
             Notification.permission === "granted"
           ) {
-            console.log("✅ Showing system notification...");
+            console.log("✅ Showing direct system notification...");
             try {
-              new Notification("📋 Tugas Reminder", {
+              const notif = new Notification("📋 Tugas Reminder", {
                 body: message,
                 icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236c5ce7' width='100' height='100'/><text x='50' y='60' font-size='60' fill='white' text-anchor='middle' dominant-baseline='middle'>!</text></svg>",
                 badge:
                   "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%23ff7675'/></svg>",
                 tag: "todolist-notification",
-                vibrate: [100, 50, 100],
-                requireInteraction: true,
+                vibrate: [200, 100, 200],
+                requireInteraction: false,
               });
-              console.log("✅ System notification ditampilkan!");
+              systemNotifShown = true;
+              console.log("✅ Direct notification ditampilkan!");
             } catch (error) {
-              console.error("❌ Error showing notification:", error);
+              console.error("Error direct notification:", error);
             }
-          } else if (
+          }
+
+          // Priority 3: Request permission jika belum
+          if (
             "Notification" in window &&
-            Notification.permission !== "denied"
+            Notification.permission === "default"
           ) {
-            console.log("⚠️ Permission not granted, requesting...");
+            console.log("⚠️ Permission default, requesting...");
             Notification.requestPermission().then((perm) => {
               console.log("Permission result:", perm);
               if (perm === "granted") {
                 try {
-                  new Notification("📋 Tugas Reminder", {
+                  const notif = new Notification("📋 Tugas Reminder", {
                     body: message,
                     icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236c5ce7' width='100' height='100'/><text x='50' y='60' font-size='60' fill='white' text-anchor='middle' dominant-baseline='middle'>!</text></svg>",
                     badge:
                       "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%23ff7675'/></svg>",
                     tag: "todolist-notification",
-                    vibrate: [100, 50, 100],
-                    requireInteraction: true,
+                    vibrate: [200, 100, 200],
+                    requireInteraction: false,
                   });
+                  systemNotifShown = true;
                 } catch (e) {
-                  console.error("❌ Error:", e);
+                  console.error("Error:", e);
                 }
               }
             });
-          } else {
-            console.warn(
-              "❌ Notification API tidak tersedia atau permission denied"
-            );
           }
 
-          // SELALU tampilkan notifikasi in-app sebagai backup
-          console.log("📱 Showing in-app notification as fallback");
+          // Priority 4: SELALU tampilkan notifikasi in-app sebagai backup
+          console.log("📱 Showing in-app notification");
           const notification = document.createElement("div");
           notification.className = "notification";
           notification.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
@@ -1006,8 +1029,14 @@
 
           // Auto-remove notification setelah 8 detik
           setTimeout(() => {
-            notification.style.animation = "slideOutRight 0.3s ease";
-            setTimeout(() => notification.remove(), 300);
+            if (notification.parentNode) {
+              notification.style.animation = "slideOutRight 0.3s ease";
+              setTimeout(() => {
+                if (notification.parentNode) {
+                  notification.remove();
+                }
+              }, 300);
+            }
           }, 8000);
         }
 
@@ -1449,17 +1478,6 @@
 
         // Request notification permission on first load
         requestNotificationPermission();
-
-        // Test notification button
-        const testNotifyBtn = document.getElementById("test-notify-btn");
-        if (testNotifyBtn) {
-          testNotifyBtn.addEventListener("click", () => {
-            console.log("🧪 Test notification button clicked");
-            showNotification(
-              "Ini adalah test notifikasi! Apakah Anda melihat ini?"
-            );
-          });
-        }
 
         // Update priorities periodically (every minute)
         setInterval(() => {
