@@ -760,7 +760,20 @@
       <div class="header">
         <div class="header-content">
           <h1><i class="fas fa-tasks"></i> List tugas</h1>
-          <p>©Created by ilham</p>
+          <p>
+            ©Created by
+            <a
+              href="https://instagram.com/ilhamm.18"
+              target="_blank"
+              style="
+                color: white;
+                text-decoration: none;
+                font-weight: 700;
+                transition: opacity 0.3s;
+              "
+              >ilham</a
+            >
+          </p>
         </div>
         <button class="theme-toggle" id="theme-toggle">
           <i class="fas fa-moon"></i>
@@ -847,6 +860,18 @@
     </div>
 
     <script>
+      // Register Service Worker
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("service-worker.js")
+          .then((registration) => {
+            console.log("Service Worker registered");
+          })
+          .catch((error) => {
+            console.log("Service Worker registration failed:", error);
+          });
+      }
+
       document.addEventListener("DOMContentLoaded", () => {
         // Elemen DOM
         const taskInput = document.getElementById("task-input");
@@ -895,24 +920,29 @@
 
         // Show notification
         function showNotification(message) {
-          // Tampilkan notifikasi sistem browser
-          if ("Notification" in window) {
+          // Tampilkan notifikasi sistem menggunakan Service Worker
+          if ("serviceWorker" in navigator && "Notification" in window) {
             if (Notification.permission === "granted") {
-              new Notification("Tugas Reminder - Todo List", {
-                body: message,
-                icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236c5ce7' width='100' height='100'/><text x='50' y='60' font-size='60' fill='white' text-anchor='middle' dominant-baseline='middle'>!</text></svg>",
-                badge:
-                  "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%23ff7675'/></svg>",
-                tag: "todolist-notification",
+              navigator.serviceWorker.ready.then((registration) => {
+                registration.showNotification("Tugas Reminder - Todo List", {
+                  body: message,
+                  icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236c5ce7' width='100' height='100'/><text x='50' y='60' font-size='60' fill='white' text-anchor='middle' dominant-baseline='middle'>!</text></svg>",
+                  badge:
+                    "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%23ff7675'/></svg>",
+                  tag: "todolist-notification",
+                  requireInteraction: true,
+                });
               });
             }
           }
 
-          // Tampilkan juga notifikasi in-app
-          const notification = document.createElement("div");
-          notification.className = "notification";
-          notification.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
-          document.body.appendChild(notification);
+          // Fallback: Tampilkan notifikasi in-app jika service worker tidak tersedia
+          if (!("serviceWorker" in navigator)) {
+            const notification = document.createElement("div");
+            notification.className = "notification";
+            notification.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+            document.body.appendChild(notification);
+          }
         }
 
         // Request notification permission
@@ -923,7 +953,7 @@
           ) {
             Notification.requestPermission().then((permission) => {
               if (permission === "granted") {
-                console.log("Notifikasi browser diaktifkan");
+                console.log("Notifikasi diaktifkan");
               }
             });
           }
