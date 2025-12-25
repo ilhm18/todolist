@@ -3,13 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#6c5ce7" />
-    <meta name="description" content="Tugas? catat disini!" />
-    <link rel="manifest" href="manifest.json" />
-    <link
-      rel="apple-touch-icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%236c5ce7' width='180' height='180'/><text x='90' y='120' font-size='90' fill='white' text-anchor='middle' dominant-baseline='middle' font-weight='bold'>✓</text></svg>"
-    />
     <title>List Tugas</title>
     <link
       rel="stylesheet"
@@ -867,28 +860,19 @@
     </div>
 
     <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        // Debug: Log ketika DOMContentLoaded
-        console.log("=== TODO APP LOADED ===");
+      // Register Service Worker
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("service-worker.js")
+          .then((registration) => {
+            console.log("Service Worker registered");
+          })
+          .catch((error) => {
+            console.log("Service Worker registration failed:", error);
+          });
+      }
 
-        // Register Service Worker untuk notifikasi di handphone
-        if ("serviceWorker" in navigator) {
-          console.log("Service Worker API tersedia");
-          navigator.serviceWorker
-            .register("sw.js")
-            .then((registration) => {
-              console.log(
-                "✅ Service Worker registered successfully:",
-                registration
-              );
-            })
-            .catch((err) => {
-              console.error("❌ Service Worker registration failed:", err);
-              console.log("Fallback: Will use direct Notification API");
-            });
-        } else {
-          console.warn("⚠️ Service Worker API tidak tersedia di browser ini");
-        }
+      document.addEventListener("DOMContentLoaded", () => {
         // Elemen DOM
         const taskInput = document.getElementById("task-input");
         const addBtn = document.getElementById("add-btn");
@@ -910,6 +894,7 @@
 
         let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
         let currentFilter = "all";
+        let notificationPermissionAsked = false;
 
         // Inisialisasi tema
         const savedTheme = localStorage.getItem("theme");
@@ -934,157 +919,114 @@
           });
         }
 
-        // Show notification
+        // Show notification (utamakan notifikasi sistem, fallback ke in-app)
         function showNotification(message) {
-          console.log("🔔 showNotification called with message:", message);
-          console.log("Notification API available:", "Notification" in window);
-          if ("Notification" in window) {
-            console.log("Current permission status:", Notification.permission);
-          }
+          console.log("🔔 showNotification:", message);
+
+          const options = {
+            body: message,
+            icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236c5ce7' width='100' height='100'/><text x='50' y='60' font-size='60' fill='white' text-anchor='middle' dominant-baseline='middle'>!</text></svg>",
+            badge:
+              "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%23ff7675'/></svg>",
+            tag: "todolist-notification",
+            vibrate: [200, 100, 200],
+            renotify: true,
+          };
 
           let systemNotifShown = false;
 
-          // Priority 1: Coba via Service Worker (untuk handphone persistent notifications)
-          if ("serviceWorker" in navigator && "Notification" in window) {
-            navigator.serviceWorker.ready
-              .then((registration) => {
-                if (Notification.permission === "granted") {
-                  try {
-                    registration.showNotification("📋 Tugas Reminder", {
-                      body: message,
-                      icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236c5ce7' width='100' height='100'/><text x='50' y='60' font-size='60' fill='white' text-anchor='middle' dominant-baseline='middle'>!</text></svg>",
-                      badge:
-                        "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%23ff7675'/></svg>",
-                      tag: "todolist-notification",
-                      vibrate: [200, 100, 200],
-                    });
-                    systemNotifShown = true;
-                    console.log("✅ System notification via Service Worker!");
-                  } catch (error) {
-                    console.error("Error via SW:", error);
-                  }
-                }
-              })
-              .catch((err) => {
-                console.log("SW not ready, fallback to direct API");
+          const showFallback = () => {
+            if (systemNotifShown) return;
+            const notification = document.createElement("div");
+            notification.className = "notification";
+            notification.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+            document.body.appendChild(notification);
+          };
+
+          const fallbackTimer = setTimeout(showFallback, 400);
+
+          if ("Notification" in window) {
+            console.log("Status izin notifikasi:", Notification.permission);
+            if (!window.isSecureContext) {
+              console.warn(
+                "Notifikasi sistem butuh HTTPS/localhost (bukan file://)"
+              );
+            }
+
+            if (Notification.permission === "default") {
+              Notification.requestPermission().then((perm) => {
+                console.log("Hasil izin:", perm);
               });
+            }
           }
 
-          // Priority 2: Direct Notification API
+          // Coba via Service Worker (lebih stabil di mobile)
           if (
+            "serviceWorker" in navigator &&
             "Notification" in window &&
             Notification.permission === "granted"
           ) {
-            console.log("✅ Showing direct system notification...");
-            try {
-              const notif = new Notification("📋 Tugas Reminder", {
-                body: message,
-                icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236c5ce7' width='100' height='100'/><text x='50' y='60' font-size='60' fill='white' text-anchor='middle' dominant-baseline='middle'>!</text></svg>",
-                badge:
-                  "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%23ff7675'/></svg>",
-                tag: "todolist-notification",
-                vibrate: [200, 100, 200],
-                requireInteraction: false,
-              });
-              systemNotifShown = true;
-              console.log("✅ Direct notification ditampilkan!");
-            } catch (error) {
-              console.error("Error direct notification:", error);
-            }
-          }
-
-          // Priority 3: Request permission jika belum
-          if (
-            "Notification" in window &&
-            Notification.permission === "default"
-          ) {
-            console.log("⚠️ Permission default, requesting...");
-            Notification.requestPermission().then((perm) => {
-              console.log("Permission result:", perm);
-              if (perm === "granted") {
-                try {
-                  const notif = new Notification("📋 Tugas Reminder", {
-                    body: message,
-                    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236c5ce7' width='100' height='100'/><text x='50' y='60' font-size='60' fill='white' text-anchor='middle' dominant-baseline='middle'>!</text></svg>",
-                    badge:
-                      "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%23ff7675'/></svg>",
-                    tag: "todolist-notification",
-                    vibrate: [200, 100, 200],
-                    requireInteraction: false,
-                  });
-                  systemNotifShown = true;
-                } catch (e) {
-                  console.error("Error:", e);
-                }
-              }
-            });
-          }
-
-          // Priority 4: SELALU tampilkan notifikasi in-app sebagai backup
-          console.log("📱 Showing in-app notification");
-          const notification = document.createElement("div");
-          notification.className = "notification";
-          notification.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
-          document.body.appendChild(notification);
-
-          // Auto-remove notification setelah 8 detik
-          setTimeout(() => {
-            if (notification.parentNode) {
-              notification.style.animation = "slideOutRight 0.3s ease";
-              setTimeout(() => {
-                if (notification.parentNode) {
-                  notification.remove();
-                }
-              }, 300);
-            }
-          }, 8000);
-        }
-
-        // Request notification permission
-        function requestNotificationPermission() {
-          if ("Notification" in window) {
-            console.log(
-              "Current notification permission:",
-              Notification.permission
-            );
-
-            if (Notification.permission === "granted") {
-              console.log("Notifikasi sudah diaktifkan");
-              return;
-            }
-
-            if (Notification.permission !== "denied") {
-              Notification.requestPermission().then((permission) => {
-                console.log("Permission result:", permission);
-                if (permission === "granted") {
-                  console.log("✅ Notifikasi berhasil diaktifkan!");
-                  // Tampilkan test notification
-                  try {
-                    new Notification("✅ Notifikasi Aktif", {
-                      body: "Sistem notifikasi sudah siap digunakan.",
-                      icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%2300b894' width='100' height='100'/><text x='50' y='60' font-size='60' fill='white' text-anchor='middle' dominant-baseline='middle'>✓</text></svg>",
-                    });
-                  } catch (e) {
-                    console.error("Error showing test notification:", e);
-                  }
-                } else if (permission === "denied") {
-                  console.warn("⚠️ User telah menolak notifikasi");
-                  alert(
-                    "Notifikasi ditolak. Jika ingin mengaktifkan notifikasi, silakan buka pengaturan browser dan izinkan notifikasi untuk aplikasi ini."
+            navigator.serviceWorker
+              .getRegistration()
+              .then((reg) => {
+                if (reg) {
+                  return reg.showNotification(
+                    "Tugas Reminder - Todo List",
+                    options
                   );
                 }
+                throw new Error("Service Worker belum terdaftar");
+              })
+              .then(() => {
+                systemNotifShown = true;
+                clearTimeout(fallbackTimer);
+                console.log("✅ Notifikasi sistem via SW tampil");
+              })
+              .catch((err) => {
+                console.error("Gagal notifikasi via SW:", err);
               });
-            } else {
-              console.warn(
-                "⚠️ Notifikasi telah diblokir sebelumnya. Silakan reset permission di pengaturan browser."
-              );
-              alert(
-                "Notifikasi telah diblokir. Silakan buka pengaturan browser dan izinkan notifikasi untuk aplikasi ini."
-              );
-            }
-          } else {
-            console.warn("⚠️ Browser ini tidak mendukung Notification API");
           }
+
+          // Fallback langsung Notification API
+          if (
+            !systemNotifShown &&
+            "Notification" in window &&
+            Notification.permission === "granted"
+          ) {
+            try {
+              new Notification("Tugas Reminder - Todo List", options);
+              systemNotifShown = true;
+              clearTimeout(fallbackTimer);
+              console.log("✅ Notifikasi sistem langsung tampil");
+            } catch (error) {
+              console.error("Gagal notifikasi langsung:", error);
+            }
+          }
+        }
+
+        // Minta izin notifikasi (dipicu gesture pengguna)
+        function requestNotificationPermission() {
+          if (!("Notification" in window)) return;
+          if (Notification.permission !== "default") return;
+
+          if (!window.isSecureContext) {
+            console.warn(
+              "Notifikasi sistem butuh HTTPS/localhost (bukan file://)"
+            );
+          }
+
+          Notification.requestPermission().then((permission) => {
+            console.log("Izin notifikasi:", permission);
+          });
+        }
+
+        // Set listener satu kali untuk minta izin saat pertama tap/klik
+        function setupNotificationPermissionOnInteraction() {
+          if (notificationPermissionAsked) return;
+          notificationPermissionAsked = true;
+          const handler = () => requestNotificationPermission();
+          document.addEventListener("click", handler, { once: true });
+          document.addEventListener("touchstart", handler, { once: true });
         }
 
         // Render tasks
@@ -1476,8 +1418,8 @@
         renderTasks();
         addBtn.disabled = true;
 
-        // Request notification permission on first load
-        requestNotificationPermission();
+        // Minta izin notifikasi saat ada interaksi pengguna (butuh gesture di mobile)
+        setupNotificationPermissionOnInteraction();
 
         // Update priorities periodically (every minute)
         setInterval(() => {
