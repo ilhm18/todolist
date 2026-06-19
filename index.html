@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
@@ -18,7 +18,9 @@
         padding: 0;
         box-sizing: border-box;
         font-family: "Poppins", sans-serif;
-        transition: background-color 0.3s, color 0.3s;
+        transition:
+          background-color 0.3s,
+          color 0.3s;
       }
 
       :root {
@@ -171,7 +173,8 @@
 
       #task-input:focus {
         border-color: var(--primary);
-        box-shadow: 0 0 0 4px rgba(255, 0, 110, 0.15),
+        box-shadow:
+          0 0 0 4px rgba(255, 0, 110, 0.15),
           inset 0 0 0 1px rgba(255, 0, 110, 0.1);
         transform: translateY(-2px);
       }
@@ -210,7 +213,8 @@
 
       select:focus {
         border-color: var(--primary);
-        box-shadow: 0 0 0 4px rgba(255, 0, 110, 0.15),
+        box-shadow:
+          0 0 0 4px rgba(255, 0, 110, 0.15),
           inset 0 0 0 1px rgba(255, 0, 110, 0.1);
         transform: translateY(-2px);
       }
@@ -235,7 +239,8 @@
 
       #deadline:focus {
         border-color: var(--primary);
-        box-shadow: 0 0 0 4px rgba(255, 0, 110, 0.15),
+        box-shadow:
+          0 0 0 4px rgba(255, 0, 110, 0.15),
           inset 0 0 0 1px rgba(255, 0, 110, 0.1);
         transform: translateY(-2px);
       }
@@ -254,7 +259,10 @@
         font-size: 1.1rem;
         font-weight: 600;
         cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s,
+          opacity 0.3s;
         box-shadow: 0 8px 20px rgba(255, 0, 110, 0.3);
         display: flex;
         justify-content: center;
@@ -451,21 +459,33 @@
       }
 
       .priority-low {
-        background: linear-gradient(135deg, rgba(58, 134, 255, 0.15), rgba(0, 217, 255, 0.1));
+        background: linear-gradient(
+          135deg,
+          rgba(58, 134, 255, 0.15),
+          rgba(0, 217, 255, 0.1)
+        );
         color: var(--low-priority);
         border: 1px solid rgba(58, 134, 255, 0.3);
         font-weight: 600;
       }
 
       .priority-medium {
-        background: linear-gradient(135deg, rgba(255, 190, 11, 0.15), rgba(255, 193, 7, 0.1));
+        background: linear-gradient(
+          135deg,
+          rgba(255, 190, 11, 0.15),
+          rgba(255, 193, 7, 0.1)
+        );
         color: var(--medium-priority);
         border: 1px solid rgba(255, 190, 11, 0.3);
         font-weight: 600;
       }
 
       .priority-high {
-        background: linear-gradient(135deg, rgba(255, 0, 110, 0.15), rgba(255, 16, 240, 0.1));
+        background: linear-gradient(
+          135deg,
+          rgba(255, 0, 110, 0.15),
+          rgba(255, 16, 240, 0.1)
+        );
         color: var(--high-priority);
         border: 1px solid rgba(255, 0, 110, 0.3);
         font-weight: 600;
@@ -476,7 +496,11 @@
         border-radius: 20px;
         font-size: 0.8rem;
         font-weight: 600;
-        background: linear-gradient(135deg, rgba(157, 78, 221, 0.15), rgba(0, 217, 255, 0.1));
+        background: linear-gradient(
+          135deg,
+          rgba(157, 78, 221, 0.15),
+          rgba(0, 217, 255, 0.1)
+        );
         color: var(--tertiary);
         border: 1px solid rgba(157, 78, 221, 0.3);
       }
@@ -635,7 +659,9 @@
         border-radius: 12px;
         box-shadow: 0 10px 30px rgba(255, 118, 117, 0.4);
         z-index: 9999;
-        animation: slideInRight 0.4s ease, slideOutRight 0.4s ease 3.6s forwards;
+        animation:
+          slideInRight 0.4s ease,
+          slideOutRight 0.4s ease 3.6s forwards;
         display: flex;
         align-items: center;
         gap: 12px;
@@ -826,6 +852,20 @@
               >ilham</a
             >
           </p>
+          <p>
+            Support me
+            <a
+              href="https://saweria.co/ilhaaaaaaaaaam18"
+              target="_blank"
+              style="
+                color: rgb(62, 55, 55);
+                text-decoration: none;
+                font-weight: 700;
+                transition: opacity 0.3s;
+              "
+              >click here</a
+            >
+          </p>
         </div>
         <button class="theme-toggle" id="theme-toggle">
           <i class="fas fa-moon"></i>
@@ -941,7 +981,7 @@
         const activeCount = document.getElementById("active-count");
         const completedCount = document.getElementById("completed-count");
         const highPriorityCount = document.getElementById(
-          "high-priority-count"
+          "high-priority-count",
         );
 
         let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
@@ -968,7 +1008,7 @@
               // Tampilkan notifikasi jika prioritas berubah menjadi high
               if (oldPriority !== "high" && task.priority === "high") {
                 showNotification(
-                  `Tugas "${task.text}" - Prioritas Banget! Waktu tinggal 2 hari lagi.`
+                  `Tugas "${task.text}" - Prioritas Banget! Waktu tinggal 2 hari lagi.`,
                 );
               }
             }
@@ -1009,7 +1049,7 @@
             console.log("Status izin notifikasi:", Notification.permission);
             if (!window.isSecureContext) {
               console.warn(
-                "Notifikasi sistem butuh HTTPS/localhost (bukan file://)"
+                "Notifikasi sistem butuh HTTPS/localhost (bukan file://)",
               );
             }
 
@@ -1032,7 +1072,7 @@
                 if (reg) {
                   return reg.showNotification(
                     "Tugas Reminder - Todo List",
-                    options
+                    options,
                   );
                 }
                 throw new Error("Service Worker belum terdaftar");
@@ -1071,7 +1111,7 @@
 
           if (!window.isSecureContext) {
             console.warn(
-              "Notifikasi sistem butuh HTTPS/localhost (bukan file://)"
+              "Notifikasi sistem butuh HTTPS/localhost (bukan file://)",
             );
           }
 
@@ -1156,12 +1196,12 @@
                               currentFilter === "all"
                                 ? "Tambahkan tugas baru untuk memulai"
                                 : currentFilter === "active"
-                                ? "Tidak ada tugas aktif"
-                                : currentFilter === "completed"
-                                ? "Tidak ada tugas yang selesai"
-                                : currentFilter === "today"
-                                ? "Tidak ada tugas untuk hari ini"
-                                : "Tidak ada tugas dengan prioritas Banget"
+                                  ? "Tidak ada tugas aktif"
+                                  : currentFilter === "completed"
+                                    ? "Tidak ada tugas yang selesai"
+                                    : currentFilter === "today"
+                                      ? "Tidak ada tugas untuk hari ini"
+                                      : "Tidak ada tugas dengan prioritas Banget"
                             }</p>
                         </div>
                     `;
@@ -1190,15 +1230,15 @@
                                           isOverdue
                                             ? "clock"
                                             : task.priority === "high"
-                                            ? "exclamation-circle"
-                                            : "bed"
+                                              ? "exclamation-circle"
+                                              : "bed"
                                         }"></i>
                                         ${
                                           isOverdue
                                             ? "waktu telah berakhir"
                                             : task.priority === "high"
-                                            ? "prioritas banget"
-                                            : "santai dulu gasih"
+                                              ? "prioritas banget"
+                                              : "santai dulu gasih"
                                         }
                                     </div>
                                     <div class="category-tag">
@@ -1206,15 +1246,15 @@
                                           task.category === "work"
                                             ? "users"
                                             : task.category === "personal"
-                                            ? "user"
-                                            : "users"
+                                              ? "user"
+                                              : "users"
                                         }"></i>
                                         ${
                                           task.category === "work"
                                             ? "Kelompok"
                                             : task.category === "personal"
-                                            ? "Sendiri"
-                                            : "Kelompok"
+                                              ? "Sendiri"
+                                              : "Kelompok"
                                         }
                                     </div>
                                     ${
@@ -1263,7 +1303,7 @@
           const activeTasks = tasks.filter((task) => !task.completed).length;
           const completedTasks = tasks.filter((task) => task.completed).length;
           const highPriorityTasks = tasks.filter(
-            (task) => task.priority === "high" && !task.completed
+            (task) => task.priority === "high" && !task.completed,
           ).length;
 
           totalCount.textContent = totalTasks;
@@ -1350,12 +1390,12 @@
               // Edit kategori
               const newCategory = prompt(
                 "Ubah kategori (personal/Group/shopping/health/other):",
-                task.category
+                task.category,
               );
               if (
                 newCategory &&
                 ["personal", "Group", "shopping", "health", "other"].includes(
-                  newCategory
+                  newCategory,
                 )
               ) {
                 task.category = newCategory;
@@ -1364,7 +1404,7 @@
               // Edit deadline
               const newDeadline = prompt(
                 "Ubah tenggat waktu (YYYY-MM-DDTHH:mm):",
-                task.deadline
+                task.deadline,
               );
               if (newDeadline !== null) {
                 task.deadline = newDeadline || null;
@@ -1381,7 +1421,7 @@
         // Delete task
         function deleteTask(taskId) {
           const taskItem = document.querySelector(
-            `.task-item[data-id="${taskId}"]`
+            `.task-item[data-id="${taskId}"]`,
           );
           if (taskItem) {
             taskItem.classList.add("removing");
@@ -1399,7 +1439,7 @@
           if (tasks.some((task) => task.completed)) {
             if (
               confirm(
-                "Apakah Anda yakin ingin menghapus semua tugas yang selesai?"
+                "Apakah Anda yakin ingin menghapus semua tugas yang selesai?",
               )
             ) {
               // Animasi untuk semua task yang akan dihapus
@@ -1503,8 +1543,8 @@
               priority === "high"
                 ? "prioritas banget"
                 : priority === "low"
-                ? "santai dulu gasih"
-                : "Biasa";
+                  ? "santai dulu gasih"
+                  : "Biasa";
             prioritySelect.value = priority;
           }
         });
